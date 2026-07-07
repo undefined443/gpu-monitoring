@@ -1,0 +1,7 @@
+# Contains real SMTP credentials — never commit. Copy alertmanager.yml.example to
+# alertmanager.yml and fill in your own values.
+alertmanager/alertmanager.yml
+
+# Host-specific port remaps / overrides — not portable, keep local only.
+*.override.yaml
+*.override.yml
