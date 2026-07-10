@@ -117,6 +117,25 @@ alertmanager:
   user: "1000:1000" # replace with the host user's uid:gid (from `id -u` / `id -g`)
 ```
 
+## Same permission-denied error persists after setting `user: "<uid>:<gid>"` — rootless Docker
+
+If `docker info` reports `Context: rootless`, the fix above doesn't work as-is: rootless Docker runs containers inside a user namespace where container UIDs are remapped, so `user: "1000:1000"` in the container does **not** land on host UID 1000. Confirmed by checking a running container's mapping:
+
+```bash
+docker inspect --format '{{.State.Pid}}' <container>
+cat /proc/<pid>/uid_map
+#          0       1000          1      <- container uid 0   -> host uid 1000 (the user running rootless dockerd)
+#          1     <subuid-start>  65536  <- container uids 1+ -> host's subordinate uid range (/etc/subuid)
+```
+
+Container UID 0 maps back to the host user who started `dockerd-rootless` — it's not real root, just confined by the same user namespace tricks rootless Docker already relies on. Container UID 1000 instead lands somewhere in the subordinate range (`/etc/subuid`), which doesn't own the 600-permission file. The fix on a rootless host is to set `user: "0:0"` instead of the host's actual uid:gid. Since this is host-setup-specific (rootless vs. rootful), don't change the checked-in `compose.yaml` default — put the override in the git-ignored `compose.override.yaml` (see [Port conflicts](#port-conflicts-9090--3000-already-in-use) above for the same pattern):
+
+```yaml
+services:
+  alertmanager:
+    user: "0:0"
+```
+
 ## How to verify the alert email actually got sent
 
 At Alertmanager's default log level, **only failed sends are logged, not successful ones** — the container logs give no direct evidence either way. Verification steps:

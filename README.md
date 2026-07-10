@@ -71,7 +71,12 @@ Alertmanager still starts normally, and rules keep evaluating and showing up und
 ## Prerequisites
 
 - Docker + Docker Compose plugin
-- NVIDIA driver + `nvidia-container-toolkit`
+- NVIDIA driver + `nvidia-container-toolkit`, registered with Docker:
+
+  ```bash
+  sudo nvidia-ctk runtime configure --runtime=docker
+  sudo systemctl restart docker
+  ```
 - `nvidia-persistenced` service active (`systemctl is-active nvidia-persistenced`)
 - If `/etc/nvidia-container-runtime/config.toml` has `mode = "cdi"`, make sure the CDI spec is up to date (see [TROUBLESHOOTING.md](TROUBLESHOOTING.md) if you hit issues)
 
