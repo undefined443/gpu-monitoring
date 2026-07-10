@@ -50,6 +50,24 @@ Defined in `prometheus/rules/alerts.yml`, delivered as email via Alertmanager (r
 
 Routing policy (`alertmanager/alertmanager.yml`): notifications for the same alert name are grouped within a 30s window (`group_wait`); unresolved alerts are re-sent every 3 hours (`repeat_interval`).
 
+### Running Without Email Notifications
+
+`alertmanager.yml` still has to exist as a file for the bind mount in `compose.yaml` to work — if it's missing, Docker creates an empty directory in its place and the container fails to start. If you don't want email alerts, skip the SMTP setup and use a null receiver instead:
+
+```yaml
+route:
+  receiver: "null"
+  group_by: ["alertname"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+
+receivers:
+  - name: "null"
+```
+
+Alertmanager still starts normally, and rules keep evaluating and showing up under Prometheus's `/alerts` page and Alertmanager's own UI (`:9093`) — it just drops notifications at the final send step instead of emailing them. Switch back to the `email` receiver in `alertmanager.yml.example` any time you want notifications turned on.
+
 ## Prerequisites
 
 - Docker + Docker Compose plugin
